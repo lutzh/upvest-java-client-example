@@ -1,6 +1,6 @@
 # Overview
 
-This directory contains a basic example of a making a request to the Upvest Investment API in Java.
+This directory contains a basic example of how to make an authenticated request to the Upvest Investment API, in Java.
 
 The intent of this code is to show you how to implement [version 15 of the
 HTTP Message Signature standard draft](https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-message-signatures-15)
@@ -17,7 +17,7 @@ This example makes the following assumptions:
 - You have Java 21 or later installed on your machine.
 - You have generated an ECDSA private / public key pair according to
   [our signature tutorial](https://docs.upvest.co/tutorials/implementing_http_signatures_v15#ecdsa).
-  (The code example does not support Ed25519 signatures yet.)
+  (This code example does not support Ed25519 signatures yet.)
 - You have shared the public key with Upvest and have
   received a set of API credentials from Upvest.
 
@@ -68,7 +68,7 @@ The output on the console should end with
 BUILD SUCCESSFUL in x ms
 ```
 
-The test queries a list of users. In addition to the output on the console, you can find the result of the test in `http-signature-examples/Java/simple-signing-demo/build/test-results/test/TEST-co.upvest.client.GetUsersTest.xml`.
+The test queries a list of users. In addition to the output on the console, you can find the result of the test in `http-signature-examples/Java/simple-signing-demo/build/test-results/test/TEST-co.upvest.client.UpvestClientTest.xml`.
 
 
 ## Understanding the example

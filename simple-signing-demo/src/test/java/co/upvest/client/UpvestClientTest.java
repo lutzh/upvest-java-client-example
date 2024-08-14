@@ -16,7 +16,7 @@
 
 package co.upvest.client;
 
-import com.google.gson.Gson;
+import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,17 +30,17 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class GetUsersTest {
+public class UpvestClientTest {
 
     private static final String UPVEST_API_VERSION = "1";
     private static final String UPVEST_SIGNATURE_VERSION = "15";
     private static final String SIGNATURE_ID = "sig1";
-    private final Logger logger = org.slf4j.LoggerFactory.getLogger(GetUsersTest.class);
+    private final Logger logger = org.slf4j.LoggerFactory.getLogger(UpvestClientTest.class);
     private SignatureKey signatureKey;
 
     private String serverUrl;
@@ -88,7 +88,6 @@ public class GetUsersTest {
                     .POST(HttpRequest.BodyPublishers.ofString(signatureComponents.bodyContent))
                     .build();
 
-            var gson = new Gson();
             var mapType = new TypeToken<Map<String, String>>() {
             };
 
@@ -101,10 +100,11 @@ public class GetUsersTest {
             logger.debug("response = {}", response);
             logger.debug("response body = {}", response.body());
 
-            var bodyAsMap = gson.fromJson(response.body(), mapType);
-
-            logger.debug("authToken = {}", bodyAsMap.get("access_token"));
-            accessToken = bodyAsMap.get("access_token");
+            var json = JsonParser.parseString(response.body()).getAsJsonObject();
+            assertTrue(json.isJsonObject());
+            assertNotNull(json.get("access_token"));
+            accessToken = json.get("access_token").getAsString();
+            logger.debug("authToken = {}", accessToken);
         }
     }
 
@@ -147,25 +147,25 @@ public class GetUsersTest {
     @Test
     void getUsers() throws IOException, InterruptedException {
 
-        var authParam = new SignatureComponentsGet(URI.create(serverUrl + "/users?limit=10"),
+        var getRequestComponents = new SignatureComponentsGet(URI.create(serverUrl + "/users?limit=10"),
                 "application/json",
                 UPVEST_API_VERSION,
                 accessToken,
                 clientId);
 
-        var signedData = authParam.sign(signatureKey);
+        var signedData = getRequestComponents.sign(signatureKey);
 
         try (HttpClient httpClient = HttpClient.newHttpClient()) {
             var request = HttpRequest.newBuilder()
-                    .uri(authParam.url)
+                    .uri(getRequestComponents.url)
                     .version(HttpClient.Version.HTTP_1_1)
                     .header("Signature-Input", SIGNATURE_ID + "=" + signedData.signatureParams())
-                    .header("Authorization", "Bearer " + authParam.accessToken)
+                    .header("Authorization", "Bearer " + getRequestComponents.accessToken)
                     .header("Signature", SIGNATURE_ID + "=:" + signedData.signature() + ":")
-                    .header("Accept", authParam.accept)
-                    .header("Upvest-Signature-Version", "15")
+                    .header("Accept", getRequestComponents.accept)
+                    .header("Upvest-Signature-Version", UPVEST_SIGNATURE_VERSION)
                     .header("Upvest-Api-Version", UPVEST_API_VERSION)
-                    .header("Upvest-Client-Id", authParam.upvestClientId)
+                    .header("Upvest-Client-Id", getRequestComponents.upvestClientId)
                     .GET()
                     .build();
 
@@ -177,11 +177,100 @@ public class GetUsersTest {
 
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            // We don't really check the returned data. As long as we get a 200 status code, we are good.
-            assertEquals(200, response.statusCode());
 
             logger.debug("response = {}", response);
             logger.debug("response body = {}", response.body());
+            // We don't really check the returned data. As long as we get a 200 status code, we are good.
+            assertEquals(200, response.statusCode());
         }
     }
+
+    @Test
+    void getCreateUser() throws IOException, InterruptedException {
+
+        var createUserBody = getCreateUserBody();
+
+        var idempotencyKey = UUID.randomUUID();
+
+        var postRequestComponents = new SignatureComponentsPost(URI.create(serverUrl + "/users"),
+                "application/json",
+                UPVEST_API_VERSION,
+                accessToken,
+                clientId,
+                createUserBody,
+                "application/json");
+
+        var signedData = postRequestComponents.sign(signatureKey);
+
+        try (HttpClient httpClient = HttpClient.newHttpClient()) {
+
+            var request = HttpRequest.newBuilder()
+                    .uri(postRequestComponents.url)
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .header("Signature-Input", SIGNATURE_ID + "=" + signedData.signatureParams())
+                    .header("Authorization", "Bearer " + postRequestComponents.accessToken)
+                    .header("Signature", SIGNATURE_ID + "=:" + signedData.signature() + ":")
+                    .header("Content-Type", postRequestComponents.contentType)
+                    .header("Accept", postRequestComponents.accept)
+                    .header("Upvest-Api-Version", UPVEST_API_VERSION)
+                    .header("Upvest-Client-Id", postRequestComponents.upvestClientId)
+                    .header("Upvest-Signature-Version", UPVEST_SIGNATURE_VERSION)
+                    .header("Content-Digest", signedData.contentDigest())
+                    .header("Idempotency-Key", idempotencyKey.toString())
+                    .POST(HttpRequest.BodyPublishers.ofString(postRequestComponents.bodyContent))
+                    .build();
+
+            var mapType = new TypeToken<Map<String, String>>() {
+            };
+
+            logger.debug("request = {}", request);
+            for (var header : request.headers().map().entrySet()) {
+                logger.debug("header = {}", header);
+            }
+
+            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            logger.debug("response = {}", response);
+            logger.debug("response body = {}", response.body());
+
+            // We don't really check the returned data. As long as we get a 200 status code, we are good.
+            assertEquals(200, response.statusCode());
+
+        }
+    }
+
+    private String getCreateUserBody() {
+        var user = JsonParser.parseString("""
+                {
+                        'first_name': 'Peter',
+                        'last_name': 'Miller',
+                        'email': 'miller@example.com',
+                        'birth_date': '1989-11-09',
+                        'birth_city': 'Munich',
+                        'birth_country': 'DE',
+                        'nationalities': ['DE'],
+                        'address': {
+                            'address_line1': 'Unter den Linden',
+                            'address_line2': '12a',
+                            'postcode': '10117',
+                            'city': 'Berlin',
+                            'country': 'DE'
+                        },
+                        'terms_and_conditions': {
+                            'consent_document_id': '62814307-f14b-40af-bc66-5942a549a759',
+                            'confirmed_at': '2020-02-03T17:14:46Z'
+                        },
+                        'data_privacy_and_sharing_agreement': {
+                            'consent_document_id': 'dd42b6a9-d04d-4dd2-8c3b-36386eaa843a',
+                            'confirmed_at': '2021-02-03T17:14:46Z'
+                        },
+                        'fatca': {
+                            'status': False,
+                            'confirmed_at': '2020-02-03T17:14:46Z'
+                        }
+                    }
+                """).getAsJsonObject();
+        logger.debug("User: \n{}",user.toString());
+        return user.toString();
+    }
+
 }
