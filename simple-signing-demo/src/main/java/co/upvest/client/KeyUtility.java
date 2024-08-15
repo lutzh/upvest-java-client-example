@@ -32,6 +32,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.security.Security;
 
+/**
+ * Utility class for loading private keys from files.
+ */
 public class KeyUtility {
 
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(KeyUtility.class);
@@ -44,6 +47,14 @@ public class KeyUtility {
         // no instances, just static methods
     }
 
+    /**
+     * Load a private key from a file.
+     *
+     * @param keyFileName   the file name of the private key
+     * @param keyPassphrase the passphrase for the private key
+     * @param keyId         the key ID
+     * @return the private key
+     */
     public static SigningKey getSignatureKey(String keyFileName, String keyPassphrase, String keyId) {
         try (PEMParser pemParser = new PEMParser(new FileReader(keyFileName))) {
             PrivateKeyInfo pki;

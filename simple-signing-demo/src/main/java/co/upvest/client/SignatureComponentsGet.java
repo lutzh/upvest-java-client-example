@@ -18,12 +18,33 @@ package co.upvest.client;
 
 
 import java.net.URI;
+import java.util.Objects;
 
+/**
+ * Container for the mandatory components of the signature for GET requests.
+ *
+ * @param url
+ * @param accept
+ * @param apiVersion
+ * @param accessToken
+ * @param upvestClientId
+ */
 public record SignatureComponentsGet(URI url, String accept, String apiVersion, String accessToken,
                                      String upvestClientId) {
+
+    public SignatureComponentsGet {
+        Objects.requireNonNull(url, "url cannot be null");
+        Objects.requireNonNull(accept, "accept cannot be null");
+        Objects.requireNonNull(apiVersion, "apiVersion cannot be null");
+        Objects.requireNonNull(accessToken, "accessToken cannot be null");
+        Objects.requireNonNull(upvestClientId, "upvestClientId cannot be null");
+
+        if (accept.isEmpty() || apiVersion.isEmpty() || accessToken.isEmpty() || upvestClientId.isEmpty()) {
+            throw new IllegalArgumentException("String arguments cannot be empty");
+        }
+    }
+
     public String httpMethod() {
         return "GET";
     }
 }
-
-

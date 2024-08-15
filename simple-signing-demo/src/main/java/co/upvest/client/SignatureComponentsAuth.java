@@ -18,10 +18,30 @@ package co.upvest.client;
 
 
 import java.net.URI;
+import java.util.Objects;
 
-
+/**
+ * Container for the mandatory components of the signature for the Auth endpoint.
+ * @param url
+ * @param accept
+ * @param apiVersion
+ * @param bodyContent
+ * @param contentType
+ */
 public record SignatureComponentsAuth(URI url, String accept, String apiVersion, String bodyContent,
                                       String contentType) {
+
+    public SignatureComponentsAuth {
+        Objects.requireNonNull(url, "url cannot be null");
+        Objects.requireNonNull(accept, "accept cannot be null");
+        Objects.requireNonNull(apiVersion, "apiVersion cannot be null");
+        Objects.requireNonNull(bodyContent, "bodyContent cannot be null");
+        Objects.requireNonNull(contentType, "contentType cannot be null");
+
+        if (accept.isEmpty() || apiVersion.isEmpty() || bodyContent.isEmpty() || contentType.isEmpty()) {
+            throw new IllegalArgumentException("String arguments cannot be empty");
+        }
+    }
 
     public String httpMethod() {
         return "POST";

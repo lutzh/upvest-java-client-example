@@ -17,9 +17,36 @@
 package co.upvest.client;
 
 import java.net.URI;
+import java.util.Objects;
 
+/**
+ * Container for the mandatory components of the signature for POST requests.
+ *
+ * @param url
+ * @param accept
+ * @param apiVersion
+ * @param accessToken
+ * @param upvestClientId
+ * @param bodyContent
+ * @param contentType
+ */
 public record SignatureComponentsPost(URI url, String accept, String apiVersion, String accessToken,
                                       String upvestClientId, String bodyContent, String contentType) {
+    public SignatureComponentsPost {
+        Objects.requireNonNull(url, "url cannot be null");
+        Objects.requireNonNull(accept, "accept cannot be null");
+        Objects.requireNonNull(apiVersion, "apiVersion cannot be null");
+        Objects.requireNonNull(accessToken, "accessToken cannot be null");
+        Objects.requireNonNull(upvestClientId, "upvestClientId cannot be null");
+        Objects.requireNonNull(bodyContent, "bodyContent cannot be null");
+        Objects.requireNonNull(contentType, "contentType cannot be null");
+
+        if (accept.isEmpty() || apiVersion.isEmpty() || accessToken.isEmpty() || upvestClientId.isEmpty() ||
+                bodyContent.isEmpty() || contentType.isEmpty()) {
+            throw new IllegalArgumentException("String arguments cannot be empty");
+        }
+    }
+
     public String httpMethod() {
         return "POST";
     }

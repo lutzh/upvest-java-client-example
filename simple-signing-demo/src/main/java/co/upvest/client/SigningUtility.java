@@ -26,6 +26,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 
+/**
+ * Utility class for signing requests.
+ */
 public final class SigningUtility {
 
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SigningUtility.class);
@@ -37,6 +40,12 @@ public final class SigningUtility {
         // no instances, just static methods
     }
 
+    /**
+     * Converts a map of form data to a URL-encoded string.
+     *
+     * @param formData the form data
+     * @return the URL-encoded form data
+     */
     static String getFormDataAsString(Map<String, String> formData) {
         StringBuilder formBodyBuilder = new StringBuilder();
         for (Map.Entry<String, String> entry : formData.entrySet()) {
@@ -50,6 +59,16 @@ public final class SigningUtility {
         return formBodyBuilder.toString();
     }
 
+    /**
+     * Signs the given fields with the given key.
+     *
+     * @param signatureFields the fields to sign
+     * @param key             the key to sign with
+     * @return the signature
+     * @throws NoSuchAlgorithmException if the algorithm is not available
+     * @throws InvalidKeyException      if the key is invalid
+     * @throws SignatureException       if the signature cannot be created
+     */
     static String sign(LinkedHashMap<String, String> signatureFields, SigningKey key) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
         var signingStringBuilder = new StringBuilder();
         for (Map.Entry<String, String> signingField : signatureFields.entrySet()) {
@@ -71,7 +90,11 @@ public final class SigningUtility {
         return signature;
     }
 
-
+    /**
+     * Generates a random nonce.
+     *
+     * @return the nonce
+     */
     public static String generateNonce() {
         StringBuilder nonce = new StringBuilder();
         for (int i = 0; i < NONCE_LENGTH; i++) {
@@ -81,6 +104,13 @@ public final class SigningUtility {
         return nonce.toString();
     }
 
+    /**
+     * Generates a SHA-512 digest of the given input.
+     *
+     * @param input the input
+     * @return the digest
+     * @throws NoSuchAlgorithmException if the algorithm is not available
+     */
     public static String getSHA512Digest(String input) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-512");
         byte[] hashBytes = digest.digest(
@@ -88,6 +118,13 @@ public final class SigningUtility {
         return "sha-512=:" + Base64.getEncoder().encodeToString(hashBytes) + ":";
     }
 
+    /**
+     * Creates the signature parameters string.
+     *
+     * @param signatureFields the fields to sign
+     * @param key             the key to sign with
+     * @return the signature parameters string
+     */
     static String createSignatureParametersString(LinkedHashMap<String, String> signatureFields, SigningKey key) {
         var nonce = generateNonce();
         var now = LocalDateTime.now(ZoneOffset.UTC);
@@ -115,6 +152,13 @@ public final class SigningUtility {
     }
 
 
+    /**
+     * Signs a POST request.
+     *
+     * @param key                 the key to sign with
+     * @param signatureComponents the signature components
+     * @return the signature
+     */
     public static SignaturePost signPostRequest(SigningKey key, SignatureComponentsPost signatureComponents) {
         try {
             var contentDigest = SigningUtility.getSHA512Digest(signatureComponents.bodyContent());
@@ -144,6 +188,13 @@ public final class SigningUtility {
     }
 
 
+    /**
+     * Signs a GET request.
+     *
+     * @param key                 the key to sign with
+     * @param signatureComponents the signature components
+     * @return the signature
+     */
     public static SignatureGet signGetRequest(SigningKey key, SignatureComponentsGet signatureComponents) {
 
         // It has to be a LinkedHashMap to keep the order of the fields
@@ -169,6 +220,13 @@ public final class SigningUtility {
         }
     }
 
+    /**
+     * Signs an authentication request.
+     *
+     * @param key                 the key to sign with
+     * @param signatureComponents the signature components
+     * @return the signature
+     */
     public static SignaturePost signAuthRequest(SigningKey key, SignatureComponentsAuth signatureComponents) {
         try {
             var contentDigest = SigningUtility.getSHA512Digest(signatureComponents.bodyContent());

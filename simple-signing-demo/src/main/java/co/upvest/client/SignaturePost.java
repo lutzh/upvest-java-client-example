@@ -16,5 +16,16 @@
 
 package co.upvest.client;
 
+import java.util.Objects;
+
 public record SignaturePost(String contentDigest, String signatureParams, String signature) {
+    public SignaturePost {
+        Objects.requireNonNull(contentDigest, "contentDigest cannot be null");
+        Objects.requireNonNull(signatureParams, "signatureParams cannot be null");
+        Objects.requireNonNull(signature, "signature cannot be null");
+
+        if (contentDigest.isEmpty() || signatureParams.isEmpty() || signature.isEmpty()) {
+            throw new IllegalArgumentException("String arguments cannot be empty");
+        }
+    }
 }
