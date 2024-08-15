@@ -16,21 +16,12 @@
 
 package co.upvest.client;
 
-import java.net.URI;
+import java.security.PrivateKey;
 import java.util.Objects;
 
-public abstract class SignatureComponents {
-    public final URI url;
-    public final String accept;
-    public final String apiVersion;
-
-    public SignatureComponents(URI url, String accept, String apiVersion) {
-        Objects.requireNonNull(url, "url must not be null");
-        Objects.requireNonNull(accept, "accept header must not be null");
-        Objects.requireNonNull(apiVersion, "apiVersion must not be null");
-        this.url = url;
-        this.accept = accept;
-        this.apiVersion = apiVersion;
+public record SigningKey(PrivateKey key, String keyId) {
+    public SigningKey {
+        Objects.requireNonNull(key, "Key must not be null");
+        Objects.requireNonNull(keyId, "Key ID must not be null");
     }
-
 }

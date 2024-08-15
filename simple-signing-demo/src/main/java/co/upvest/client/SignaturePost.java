@@ -16,12 +16,5 @@
 
 package co.upvest.client;
 
-import java.net.URI;
-
-public record SignatureComponentsPost(URI url, String accept, String apiVersion, String accessToken,
-                                      String upvestClientId, String bodyContent, String contentType) {
-    public String httpMethod() {
-        return "POST";
-    }
-
+public record SignaturePost(String contentDigest, String signatureParams, String signature) {
 }
